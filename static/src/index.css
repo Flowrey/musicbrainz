@@ -1,0 +1,10 @@
+.App-coverart {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.coverart {
+  border: solid #000000;
+  margin: 15px;
+}
