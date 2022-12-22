@@ -6,6 +6,29 @@ import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 const api_root_url = "https://musicbrainz.org/ws/2";
 
+async function search(type, query, limit = 25) {
+  let obj;
+  console.log(query);
+  let url = `${api_root_url}/${type}/?query=${query}&fmt=json&limit=${limit}`
+  console.log(url);
+  const res = await fetch(url);
+  obj = await res.json();
+
+  return obj
+}
+
+async function fetch_coverart_url_from_mbid(mbid) {
+  let obj;
+  let url = `https://coverartarchive.org/release-group/${mbid}/front-250`;
+
+  const res = await fetch(url);
+  if (res.ok) {
+    obj = await res.url;
+  }
+
+  return obj
+}
+
 function App() {
   const [query, setQuery] = useState("")
   const [coverarts, setCoverArts] = useState([])
@@ -14,42 +37,46 @@ function App() {
     setQuery(e.target.value)
   }
 
-  function handleSubmit(e) {
+  async function changeCoverarts(release_group) {
+    let coverart_url = await fetch_coverart_url_from_mbid(release_group.id);
+    if (coverart_url) {
+      const newCoverart = { id: release_group.id, url: coverart_url, title: release_group.title };
+      coverarts.push(newCoverart);
+      setCoverArts([...coverarts]);
+    }
+  }
+
+  async function handleSubmit(e) {
+    // Avoid internal GET request to launch
     e.preventDefault();
+
+    // Empty previous submit
     coverarts.length = 0;
     setCoverArts([]);
-    const entity_type = "release-group";
-    var search_url = `${api_root_url}/${entity_type}`
-    var artist_url = `${search_url}?query=artist:${query}&fmt=json`
 
-    // Search for the artist requested
-    fetch(artist_url).then(function (response) {
-      if (response.ok) {
-        return response.json();
+    // opt 1
+    // Search directly release group
+
+    // let res = await search("release-group", query);
+    // let promiseArray = []
+    // for (const release_group of res["release-groups"]) {
+    //   promiseArray.push(changeCoverarts(release_group));
+    // }
+    
+    // opt 2
+    // Firstly search for artist and the find artist's release
+    let promiseArray = []
+    let artists = await search("artist", query, 1);
+    for (const artisit of artists["artists"]) {
+      let release_groups = await search("release-group", `arid:${artisit.id}`)
+      for (const release_group of release_groups["release-groups"]) {
+        promiseArray.push(changeCoverarts(release_group));
       }
-    })
-      .then(function (artist_resp) {
-        // Fetch CoverArt Archive
-        for (const relase_group of artist_resp["release-groups"]) {
-          let mbid = relase_group["id"];
-          let title = relase_group["title"];
-          let coverart_url = `https://coverartarchive.org/release-group/${mbid}/front-250`;
+    }
 
-          fetch(coverart_url).then(function (response) {
-            if (response.ok) {
-              return response.url;
-            }
-          })
-            .then(function (img_url) {
-              if (img_url) {
-                const newCoverart = { id: mbid, url: img_url, title: title };
-                coverarts.push(newCoverart)
-                setCoverArts([...coverarts]);
-              }
-            })
-        }
-      })
-    setQuery("")
+    // Execute all promise and reset query
+    await Promise.all(promiseArray);
+    setQuery("");
   }
 
   const coverartsList = coverarts.map((coverart) => (
@@ -77,14 +104,12 @@ function App() {
           <Navbar.Collapse className="justify-content-end">
             <Form className="d-flex" onSubmit={handleSubmit}>
               <Form.Control
-                type="search"
+                type="test"
                 placeholder="Search for an Artist"
-                className="me-2"
-                aria-label="Search"
                 value={query}
                 onChange={handleChange}
               />
-              <Button variant="success">Search</Button>
+              <Button variant="success" type="submit" onSubmit={handleSubmit}>Search</Button>
             </Form>
           </Navbar.Collapse>
           <div className="query">
