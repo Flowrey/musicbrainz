@@ -4,7 +4,11 @@
   justify-content: center;
 }
 
-.coverart {
-  border: solid #000000;
+.cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  width: 250px;
   margin: 15px;
 }

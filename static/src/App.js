@@ -53,17 +53,20 @@ function App() {
   }
 
   const coverartsList = coverarts.map((coverart) => (
-    <Image
-      fluid="true"
-      thumbnail="true"
-      src={coverart.url}
-      key={coverart.id}
-      className="coverart"
-      alt={coverart.title}
-      title={coverart.title}
-      width="250px"
-      height="250px"
-    />
+    <div className="cover" fluid="true">
+      <Image
+        fluid="true"
+        thumbnail="true"
+        src={coverart.url}
+        key={coverart.id}
+        className="coverart"
+        alt={coverart.title}
+        title={coverart.title}
+        width="250px"
+        height="250px"
+      />
+      <p>{coverart.title}</p>
+    </div>
   ));
 
   return (
